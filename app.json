@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Velocity Fit",
+    "slug": "velocity-fit",
+    "version": "1.0.0",
+    "scheme": "velocityfit",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.velocityfit.app"
+    },
+    "android": {
+      "package": "com.velocityfit.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#991b1b",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "285115a8-4136-4947-a449-a37bb60d9a51"
+      }
+    }
+  }
+}
