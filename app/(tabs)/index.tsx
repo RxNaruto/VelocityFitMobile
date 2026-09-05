@@ -194,7 +194,6 @@ function LegendItem({ color, label }: { color: string; label: string }) {
 const styles = StyleSheet.create({
   scroll: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
     gap: spacing.lg,
   },
   brandCard: { gap: spacing.md },

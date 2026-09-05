@@ -244,81 +244,106 @@ export function SetLogger({ exercise, onAdd, onCancel }: SetLoggerProps) {
           : 'Tap F to mark failure. Use + Drop for no-rest drops.'}
       </Text>
 
-      <View style={styles.tableHead}>
-        <Text style={styles.th}>#</Text>
-        <Text style={styles.th}>{aLabel}</Text>
-        <Text style={styles.th}>{bLabel}</Text>
-        <Text style={styles.th}>F</Text>
-        <Text style={styles.th} />
+      <View style={styles.table}>
+        <View style={styles.tableHead}>
+          <Text style={[styles.th, styles.colNum]}>#</Text>
+          <Text style={[styles.th, styles.colInput]}>{aLabel}</Text>
+          <Text style={[styles.th, styles.colInput]}>{bLabel}</Text>
+          <Text style={[styles.th, styles.colFail]}>F</Text>
+          <View style={styles.colDel} />
+        </View>
+
+        {rows.map((r, i) => (
+          <View key={r.id} style={[styles.setGroup, i > 0 && styles.setGroupDivided]}>
+            <View style={styles.setRow}>
+              <Text style={[styles.setNum, styles.colNum]}>{i + 1}</Text>
+              <TextInput
+                style={[styles.input, styles.colInput]}
+                keyboardType="numeric"
+                value={String(r.a)}
+                onChangeText={(v) => updateRow(i, 'a', v)}
+                placeholder="0"
+                placeholderTextColor={colors.textFaint}
+              />
+              <TextInput
+                style={[styles.input, styles.colInput]}
+                keyboardType={timeBased ? 'number-pad' : 'decimal-pad'}
+                value={String(r.b)}
+                onChangeText={(v) => updateRow(i, 'b', v)}
+                placeholder={timeBased ? '0' : 'BW'}
+                placeholderTextColor={colors.textFaint}
+              />
+              <Pressable
+                onPress={() => toggleFailure(i)}
+                style={[styles.failBtn, styles.colFail, r.isFailure && styles.failBtnOn]}
+                accessibilityRole="button"
+                accessibilityLabel={`Mark set ${i + 1} as taken to failure`}
+              >
+                <Text style={[styles.failText, r.isFailure && styles.failTextOn]}>F</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => removeRow(i)}
+                disabled={rows.length === 1}
+                style={styles.colDel}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove set ${i + 1}`}
+              >
+                <Text style={[styles.remove, rows.length === 1 && styles.removeOff]}>×</Text>
+              </Pressable>
+            </View>
+
+            {!timeBased && r.drops.length > 0 ? (
+              <View style={styles.drops}>
+                {r.drops.map((d, j) => (
+                  <View key={d.id} style={styles.dropRow}>
+                    <Text style={[styles.dropLabel, styles.colNum]}>↳</Text>
+                    <TextInput
+                      style={[styles.input, styles.inputDrop, styles.colInput]}
+                      keyboardType="numeric"
+                      value={String(d.reps)}
+                      onChangeText={(v) => updateDrop(i, j, 'reps', v)}
+                      placeholder="reps"
+                      placeholderTextColor={colors.textFaint}
+                    />
+                    <TextInput
+                      style={[styles.input, styles.inputDrop, styles.colInput]}
+                      keyboardType="decimal-pad"
+                      value={String(d.weight)}
+                      onChangeText={(v) => updateDrop(i, j, 'weight', v)}
+                      placeholder="wt"
+                      placeholderTextColor={colors.textFaint}
+                    />
+                    <View style={styles.colFail} />
+                    <Pressable
+                      onPress={() => removeDrop(i, j)}
+                      style={styles.colDel}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove drop ${j + 1}`}
+                    >
+                      <Text style={styles.remove}>×</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {!timeBased ? (
+              <Pressable
+                onPress={() => addDrop(i)}
+                style={({ pressed }) => [styles.dropAdd, pressed && styles.dropAddPressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Add a drop set to set ${i + 1}`}
+              >
+                <Text style={styles.dropAddText}>+ Drop</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ))}
       </View>
 
-      {rows.map((r, i) => (
-        <View key={r.id} style={styles.setGroup}>
-          <View style={styles.setRow}>
-            <Text style={styles.setNum}>{i + 1}</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={String(r.a)}
-              onChangeText={(v) => updateRow(i, 'a', v)}
-              placeholder="0"
-              placeholderTextColor={colors.textFaint}
-            />
-            <TextInput
-              style={styles.input}
-              keyboardType={timeBased ? 'number-pad' : 'decimal-pad'}
-              value={String(r.b)}
-              onChangeText={(v) => updateRow(i, 'b', v)}
-              placeholder={timeBased ? '0' : 'BW'}
-              placeholderTextColor={colors.textFaint}
-            />
-            <Pressable
-              onPress={() => toggleFailure(i)}
-              style={[styles.failBtn, r.isFailure && styles.failBtnOn]}
-            >
-              <Text style={[styles.failText, r.isFailure && styles.failTextOn]}>F</Text>
-            </Pressable>
-            <Pressable onPress={() => removeRow(i)} disabled={rows.length === 1}>
-              <Text style={styles.remove}>×</Text>
-            </Pressable>
-          </View>
-
-          {!timeBased && r.drops.length > 0 ? (
-            <View style={styles.drops}>
-              {r.drops.map((d, j) => (
-                <View key={d.id} style={styles.dropRow}>
-                  <Text style={styles.dropLabel}>› drop {j + 1}</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={String(d.reps)}
-                    onChangeText={(v) => updateDrop(i, j, 'reps', v)}
-                    placeholder="reps"
-                    placeholderTextColor={colors.textFaint}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="decimal-pad"
-                    value={String(d.weight)}
-                    onChangeText={(v) => updateDrop(i, j, 'weight', v)}
-                    placeholder="wt"
-                    placeholderTextColor={colors.textFaint}
-                  />
-                  <Pressable onPress={() => removeDrop(i, j)}>
-                    <Text style={styles.remove}>×</Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {!timeBased ? (
-            <Button title="+ Drop" variant="ghost" size="sm" onPress={() => addDrop(i)} />
-          ) : null}
-        </View>
-      ))}
-
-      <Button title="+ Add set" variant="ghost" onPress={addRow} />
+      <Button title="+ Add set" variant="ghost" size="sm" onPress={addRow} />
 
       <TextArea
         label="Notes (optional)"
@@ -407,40 +432,61 @@ function describeStrengthSet(set: WorkoutSet): string {
   return segs.join(' → ');
 }
 
+/** Shared column widths so the header, set rows and drop rows line up. */
+const COL_NUM = 22;
+const COL_FAIL = 40;
+const COL_DEL = 28;
+
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
   hint: { ...typography.caption },
+  table: {
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
   tableHead: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
-  th: { ...typography.label, flex: 1, fontSize: 10 },
-  setGroup: { gap: spacing.sm, marginBottom: spacing.sm },
+  th: { ...typography.label, fontSize: 10, textAlign: 'center' },
+  colNum: { width: COL_NUM },
+  colInput: { flex: 1 },
+  colFail: { width: COL_FAIL },
+  colDel: { width: COL_DEL, alignItems: 'center', justifyContent: 'center' },
+  setGroup: { paddingVertical: spacing.sm, gap: spacing.xs },
+  setGroupDivided: { borderTopWidth: 1, borderTopColor: colors.border },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  setNum: { width: 20, ...typography.caption, textAlign: 'center' },
+  setNum: { ...typography.caption, textAlign: 'center', fontWeight: '700' },
   input: {
-    flex: 1,
     backgroundColor: colors.surface2,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: 0,
     color: colors.text,
     fontSize: 15,
-    minHeight: 40,
+    textAlign: 'center',
+    height: 42,
   },
+  inputDrop: { height: 34, fontSize: 14, backgroundColor: colors.surface },
   failBtn: {
-    width: 36,
-    height: 40,
+    height: 42,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -450,10 +496,30 @@ const styles = StyleSheet.create({
   },
   failText: { fontWeight: '700', color: colors.textMuted },
   failTextOn: { color: colors.primaryHover },
-  remove: { fontSize: 22, color: colors.textMuted, paddingHorizontal: spacing.xs },
-  drops: { gap: spacing.sm, paddingLeft: spacing.md },
+  remove: { fontSize: 20, lineHeight: 22, color: colors.textMuted },
+  removeOff: { opacity: 0.3 },
+  drops: { gap: spacing.xs },
   dropRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  dropLabel: { ...typography.caption, width: 56 },
+  dropLabel: { ...typography.caption, textAlign: 'center', color: colors.textFaint },
+  dropAdd: {
+    alignSelf: 'flex-start',
+    marginLeft: COL_NUM + spacing.sm,
+    height: 28,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropAddPressed: { opacity: 0.85, borderColor: colors.primaryEdge },
+  dropAddText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    color: colors.primaryHover,
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
