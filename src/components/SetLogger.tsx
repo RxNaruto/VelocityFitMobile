@@ -148,9 +148,10 @@ export function SetLogger({ exercise, onAdd, onCancel }: SetLoggerProps) {
         const last = r.drops[r.drops.length - 1];
         const seedWeight =
           r.drops.length === 0 ? suggestDropWeight(r.b) : last?.weight || '';
+        // Adding a drop must not touch `isFailure` — the F flag stays whatever
+        // the user set, otherwise turning it off looks like it never sticks.
         return {
           ...r,
-          isFailure: true,
           drops: [...r.drops, makeDrop(last?.reps || '', seedWeight)],
         };
       })
@@ -275,11 +276,27 @@ export function SetLogger({ exercise, onAdd, onCancel }: SetLoggerProps) {
               />
               <Pressable
                 onPress={() => toggleFailure(i)}
-                style={[styles.failBtn, styles.colFail, r.isFailure && styles.failBtnOn]}
-                accessibilityRole="button"
-                accessibilityLabel={`Mark set ${i + 1} as taken to failure`}
+                // Vertical only: the neighbouring × already claims the gap to
+                // the right, and widening this would fight it for taps.
+                hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
+                style={({ pressed }) => [
+                  styles.failBtn,
+                  styles.colFail,
+                  r.isFailure ? styles.failBtnOn : styles.failBtnOff,
+                  pressed && styles.failBtnPressed,
+                ]}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: r.isFailure }}
+                accessibilityLabel={`Set ${i + 1} taken to failure`}
               >
-                <Text style={[styles.failText, r.isFailure && styles.failTextOn]}>F</Text>
+                <Text
+                  style={[
+                    styles.failText,
+                    r.isFailure ? styles.failTextOn : styles.failTextOff,
+                  ]}
+                >
+                  F
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => removeRow(i)}
@@ -485,17 +502,23 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Both states are spelled out so toggling always repaints the fill, border
+  // and glyph together instead of leaving the "on" red behind.
+  failBtnOff: {
+    backgroundColor: colors.surface2,
+    borderColor: colors.border,
+  },
   failBtnOn: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  failText: { fontWeight: '700', color: colors.textMuted },
-  failTextOn: { color: colors.primaryHover },
+  failBtnPressed: { opacity: 0.65 },
+  failText: { fontWeight: '700', fontSize: 15 },
+  failTextOff: { color: colors.textMuted },
+  failTextOn: { color: colors.white },
   remove: { fontSize: 20, lineHeight: 22, color: colors.textMuted },
   removeOff: { opacity: 0.3 },
   drops: { gap: spacing.xs },

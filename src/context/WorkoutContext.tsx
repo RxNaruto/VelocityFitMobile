@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { api } from '@/services/api';
+import { hasLoggedSets } from '@/utils/workouts';
 import type {
   EntryDraft,
   Exercise,
@@ -71,7 +72,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     const list = await api.listWorkouts();
     const map: Record<string, Workout> = {};
     list.forEach((w) => {
-      map[w.date] = w;
+      // Emptied-out days come back as bare rows; keeping them would paint the
+      // calendar as if the user had trained.
+      if (hasLoggedSets(w)) map[w.date] = w;
     });
     setWorkoutsByDate(map);
   }, []);
@@ -119,7 +122,12 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
 
   const saveToday = useCallback(async (entries: EntryDraft[]): Promise<Workout> => {
     const saved = await api.saveTodayWorkout(entries);
-    setWorkoutsByDate((prev) => ({ ...prev, [saved.date]: saved }));
+    setWorkoutsByDate((prev) => {
+      const next = { ...prev };
+      if (hasLoggedSets(saved)) next[saved.date] = saved;
+      else delete next[saved.date];
+      return next;
+    });
     return saved;
   }, []);
 
@@ -127,7 +135,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     const w = await api.getWorkoutByDate(dateKey);
     setWorkoutsByDate((prev) => {
       const next = { ...prev };
-      if (w) next[dateKey] = w;
+      if (w && hasLoggedSets(w)) next[dateKey] = w;
       else delete next[dateKey];
       return next;
     });

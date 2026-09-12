@@ -6,11 +6,13 @@ import {
   toDateKey,
   todayKey,
 } from '@/utils/dates';
+import { hasLoggedSets } from '@/utils/workouts';
 import type { Workout } from '@/types';
 import { colors, radius, spacing, typography } from '@/theme';
 import { IconButton } from '@/components/ui';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const COLUMN_WIDTH = `${100 / 7}%` as const;
 
 interface CalendarProps {
   workoutsByDate: Record<string, Workout>;
@@ -46,7 +48,7 @@ export function Calendar({
       <View style={styles.weekdays}>
         {WEEKDAYS.map((w) => (
           <Text key={w} style={styles.weekday}>
-            {w}
+            {w.toUpperCase()}
           </Text>
         ))}
       </View>
@@ -57,37 +59,44 @@ export function Calendar({
           const inMonth = day.getMonth() === viewDate.getMonth();
           const isTodayCell = key === today;
           const isFuture = key > today;
-          const hasWorkout = Boolean(workoutsByDate[key]);
+          const hasWorkout = hasLoggedSets(workoutsByDate[key]);
           const isBeforeJoin = joinedDateKey ? key < joinedDateKey : false;
           const isMissed =
             inMonth && !hasWorkout && !isTodayCell && !isFuture && !isBeforeJoin;
 
           return (
-            <Pressable
-              key={key}
-              disabled={isFuture}
-              onPress={() => onSelectDate?.(key)}
-              style={[
-                styles.cell,
-                !inMonth && styles.otherMonth,
-                isTodayCell && styles.today,
-                isFuture && styles.future,
-                hasWorkout && styles.hasWorkout,
-                isMissed && styles.isMissed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.dayNum,
-                  !inMonth && styles.dayNumMuted,
-                  isTodayCell && styles.dayNumToday,
+            <View key={key} style={styles.cellWrap}>
+              <Pressable
+                disabled={isFuture}
+                onPress={() => onSelectDate?.(key)}
+                accessibilityRole="button"
+                accessibilityLabel={`${key}${hasWorkout ? ', workout logged' : ''}`}
+                style={({ pressed }) => [
+                  styles.cell,
+                  isMissed && styles.cellMissed,
+                  hasWorkout && styles.cellWorkout,
+                  isTodayCell && !hasWorkout && styles.cellTodayFill,
+                  // Ring goes on last so a logged today keeps its fill.
+                  isTodayCell && styles.cellTodayRing,
+                  !inMonth && styles.cellOtherMonth,
+                  isFuture && styles.cellFuture,
+                  pressed && styles.cellPressed,
                 ]}
               >
-                {day.getDate()}
-              </Text>
-              {hasWorkout ? <View style={[styles.dot, styles.dotWorkout]} /> : null}
-              {isMissed ? <View style={[styles.dot, styles.dotMissed]} /> : null}
-            </Pressable>
+                <Text
+                  style={[
+                    styles.dayNum,
+                    isMissed && styles.dayNumMissed,
+                    hasWorkout && styles.dayNumWorkout,
+                    isTodayCell && styles.dayNumToday,
+                  ]}
+                >
+                  {day.getDate()}
+                </Text>
+                {hasWorkout ? <View style={[styles.dot, styles.dotWorkout]} /> : null}
+                {isMissed ? <View style={[styles.dot, styles.dotMissed]} /> : null}
+              </Pressable>
+            </View>
           );
         })}
       </View>
@@ -108,39 +117,60 @@ const styles = StyleSheet.create({
   },
   weekday: {
     ...typography.caption,
-    flex: 1,
+    width: COLUMN_WIDTH,
     textAlign: 'center',
+    fontSize: 11,
+    letterSpacing: 0.8,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  cell: {
-    width: `${100 / 7}%`,
+  // The wrapper owns the column width so the padding reads as a gutter between
+  // cells; percentage widths and `gap` together would overflow the row.
+  cellWrap: {
+    width: COLUMN_WIDTH,
     aspectRatio: 1,
+    padding: 3,
+  },
+  cell: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.sm,
-    padding: 2,
-  },
-  otherMonth: { opacity: 0.35 },
-  today: {
     borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
+    borderColor: 'transparent',
+    backgroundColor: colors.surface2,
   },
-  future: { opacity: 0.45 },
-  hasWorkout: { backgroundColor: 'rgba(220,38,38,0.08)' },
-  isMissed: { backgroundColor: 'rgba(239,68,68,0.06)' },
+  // Days without a workout should recede, not compete with logged days.
+  cellMissed: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  cellWorkout: {
+    backgroundColor: 'rgba(220,38,38,0.30)',
+    borderColor: 'rgba(239,68,68,0.55)',
+  },
+  cellTodayFill: {
+    backgroundColor: 'rgba(220,38,38,0.18)',
+  },
+  cellTodayRing: {
+    borderColor: colors.primary,
+  },
+  cellOtherMonth: { opacity: 0.4 },
+  cellFuture: { opacity: 0.35 },
+  cellPressed: { opacity: 0.7 },
   dayNum: { ...typography.body, fontSize: 14 },
-  dayNumMuted: { color: colors.textFaint },
-  dayNumToday: { color: colors.primaryHover, fontWeight: '700' },
+  dayNumMissed: { color: colors.textFaint },
+  dayNumWorkout: { color: colors.white, fontWeight: '700' },
+  dayNumToday: { color: colors.white, fontWeight: '700' },
   dot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    marginTop: 2,
+    position: 'absolute',
+    bottom: 5,
   },
-  dotWorkout: { backgroundColor: colors.primary },
-  dotMissed: { backgroundColor: colors.danger, opacity: 0.7 },
+  dotWorkout: { backgroundColor: colors.primaryHover },
+  dotMissed: { backgroundColor: colors.textFaint },
 });

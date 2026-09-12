@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSegments } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { colors, spacing } from '@/theme';
 
 interface ScreenProps {
@@ -33,16 +34,20 @@ export function Screen({
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
+  const keyboardInset = useKeyboardInset();
   // Inside the tab navigator the tab bar already clears the system nav bar;
   // standalone stack screens have to reserve that space themselves.
   const insideTabs = segments[0] === '(tabs)';
   const bottomPad = { paddingBottom: spacing.xxl + (insideTabs ? 0 : insets.bottom) };
+  // The keyboard overlays the screen instead of resizing it, so the scroll
+  // content needs matching slack to stay reachable while typing.
+  const keyboardPad = { paddingBottom: bottomPad.paddingBottom + keyboardInset };
 
   const inner = scroll ? (
     <ScrollView
       contentContainerStyle={[
         padded && styles.padded,
-        bottomPad,
+        keyboardPad,
         styles.scrollContent,
         contentStyle,
       ]}
